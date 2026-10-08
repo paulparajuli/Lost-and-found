@@ -328,7 +328,7 @@
     select,
     textarea {
       width: 100%;
-      min-height: 44px; /* Large touch target for phones */
+      min-height: 44px; /* Large touch target for mobile */
       padding: 0.65rem 0.85rem;
       font-size: 0.95rem;
       border: 1.5px solid var(--border);
@@ -507,7 +507,7 @@
        ========================================================================== */
     .search-wrapper {
       position: relative;
-      margin-bottom: 1.15rem;
+      margin-bottom: 1rem;
     }
 
     .search-input {
@@ -548,6 +548,61 @@
     .search-clear:hover {
       background-color: #e2e8f0;
       color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       STATUS FILTER BUTTONS
+       ========================================================================== */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .filter-btn {
+      min-height: 42px; /* Touch-friendly for mobile */
+      padding: 0.45rem 1rem;
+      border-radius: 9999px;
+      border: 1.5px solid var(--border);
+      background-color: var(--surface);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      transition: background-color var(--transition-fast), 
+                  color var(--transition-fast), 
+                  border-color var(--transition-fast), 
+                  transform var(--transition-fast), 
+                  box-shadow var(--transition-fast);
+    }
+
+    .filter-btn:hover {
+      background-color: var(--surface-subtle);
+      border-color: #94a3b8;
+      transform: translateY(-1px);
+    }
+
+    .filter-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Clearly Highlighted Active Filter */
+    .filter-btn.active {
+      background-color: var(--primary-navy);
+      color: #ffffff;
+      border-color: var(--primary-navy);
+      box-shadow: 0 2px 4px rgba(15, 43, 92, 0.25);
+    }
+
+    .filter-btn.active:hover {
+      background-color: #173873;
+      border-color: #173873;
     }
 
     .records-meta {
@@ -808,6 +863,14 @@
       .staff-session-bar {
         justify-content: space-between;
       }
+      .filter-bar {
+        gap: 0.4rem;
+      }
+      .filter-btn {
+        flex: 1 1 calc(50% - 0.4rem);
+        padding: 0.45rem 0.5rem;
+        font-size: 0.85rem;
+      }
       .record-card-top {
         flex-direction: column;
       }
@@ -986,7 +1049,7 @@
           </form>
         </section>
 
-        <!-- Right Column: Live Search & Item Log -->
+        <!-- Right Column: Live Search, Filters & Item Log -->
         <section class="panel" aria-labelledby="records-heading">
           <div class="panel-header">
             <h2 id="records-heading">Campus Item Log</h2>
@@ -1003,6 +1066,14 @@
               aria-label="Search records"
             >
             <button type="button" id="searchClearBtn" class="search-clear" title="Clear search">✕</button>
+          </div>
+
+          <!-- Status Filter Buttons -->
+          <div class="filter-bar" role="group" aria-label="Filter items by status">
+            <button type="button" class="filter-btn active" data-status="all">All Items</button>
+            <button type="button" class="filter-btn" data-status="Lost">Lost</button>
+            <button type="button" class="filter-btn" data-status="Found">Found</button>
+            <button type="button" class="filter-btn" data-status="Returned">Returned</button>
           </div>
 
           <!-- Meta Count Info -->
@@ -1031,6 +1102,9 @@
     const STORAGE_KEY_INIT = 'campus_lost_found_initialized_v1';
     const STORAGE_KEY_USER = 'campus_lost_found_demo_user_v1';
 
+    // State Variables
+    let currentStatusFilter = 'all';
+
     // DOM Elements - Screens & Navigation
     const demoAuthScreen = document.getElementById('demoAuthScreen');
     const dashboardScreen = document.getElementById('dashboardScreen');
@@ -1048,9 +1122,10 @@
     const itemDateInput = document.getElementById('itemDate');
     const itemDescriptionInput = document.getElementById('itemDescription');
 
-    // DOM Elements - Search & Record List
+    // DOM Elements - Search, Filters & Record List
     const searchInput = document.getElementById('searchInput');
     const searchClearBtn = document.getElementById('searchClearBtn');
+    const filterButtons = document.querySelectorAll('.filter-btn');
     const recordsContainer = document.getElementById('recordsContainer');
     const recordCountText = document.getElementById('recordCountText');
 
@@ -1366,13 +1441,35 @@
     }
 
     // ==========================================================================
-    // RENDER LOG & LIVE SEARCH
+    // STATUS FILTER BUTTON EVENTS
+    // ==========================================================================
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentStatusFilter = btn.dataset.status;
+        renderRecords();
+      });
+    });
+
+    // ==========================================================================
+    // RENDER LOG & COMBINED SEARCH + FILTER
     // ==========================================================================
     function renderRecords() {
       const query = searchInput.value.trim().toLowerCase();
       const allRecords = loadRecords();
 
       const filteredRecords = allRecords.filter(item => {
+        // Status filter evaluation
+        if (currentStatusFilter === 'Returned') {
+          if (!item.isReturned) return false;
+        } else if (currentStatusFilter === 'Lost') {
+          if (item.isReturned || item.status !== 'Lost') return false;
+        } else if (currentStatusFilter === 'Found') {
+          if (item.isReturned || item.status !== 'Found') return false;
+        }
+
+        // Search query evaluation (combines with filter)
         if (!query) return true;
         const haystack = [
           item.name || '',
@@ -1387,20 +1484,22 @@
       // Update count text
       if (allRecords.length === 0) {
         recordCountText.textContent = 'No records in system.';
-      } else if (query) {
-        recordCountText.textContent = `Showing ${filteredRecords.length} of ${allRecords.length} items for "${query}"`;
+      } else if (query || currentStatusFilter !== 'all') {
+        const filterDesc = currentStatusFilter !== 'all' ? ` [${currentStatusFilter}]` : '';
+        const queryDesc = query ? ` for "${query}"` : '';
+        recordCountText.textContent = `Showing ${filteredRecords.length} of ${allRecords.length} items${filterDesc}${queryDesc}`;
       } else {
         recordCountText.textContent = `Showing all ${allRecords.length} recorded items`;
       }
 
-      // Empty State
+      // Empty State handling
       if (filteredRecords.length === 0) {
-        if (query) {
+        if (allRecords.length > 0) {
           recordsContainer.innerHTML = `
             <div class="empty-state">
               <span class="empty-icon">🔍</span>
-              <p><strong>No items match your search.</strong></p>
-              <p style="font-size: 0.88rem; margin-top: 0.35rem;">Try searching for a different keyword or campus location.</p>
+              <p><strong>No items match your search and filter.</strong></p>
+              <p style="font-size: 0.88rem; margin-top: 0.35rem;">Try adjusting your keyword or selecting a different status filter.</p>
             </div>
           `;
         } else {
