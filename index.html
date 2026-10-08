@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Lost &amp; Found Staff Tracker</title>
+  <style>
+    :root {
+      --primary-navy: #0f2b5c;
+      --primary-blue: #1d4ed8;
+      --primary-hover: #1e40af;
+      --accent-blue: #3b82f6;
+      --bg-canvas: #f8fafc;
+      --surface: #ffffff;
+      --surface-subtle: #f1f5f9;
+      --border: #cbd5e1;
+      --border-light: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --danger-border: #fca5a5;
+      --lost-bg: #fef3c7;
+      --lost-text: #92400e;
+      --lost-border: #fde68a;
+      --found-bg: #d1fae5;
+      --found-text: #065f46;
+      --found-border: #a7f3d0;
+      --returned-bg: #e2e8f0;
+      --returned-text: #334155;
+      --returned-border: #cbd5e1;
+      --demo-bg: #f3e8ff;
+      --demo-text: #6b21a8;
+      --demo-border: #e9d5ff;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+      --transition-fast: 180ms ease;
+      --transition-normal: 220ms ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 1.25rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Accessibility Focus Indicators */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2.5px solid var(--primary-blue);
+      outline-offset: 2px;
+    }
+
+    /* Container */
+    .app-container {
+      max-width: 1180px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Screens / Views with Smooth Transitions */
+    .screen-view {
+      display: none;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity var(--transition-normal), transform var(--transition-normal);
+    }
+
+    .screen-view.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ==========================================================================
+       DEMO SIGN-IN SCREEN
+       ========================================================================== */
+    .auth-wrapper {
+      min-height: 82vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2rem;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      text-align: left;
+    }
+
+    .auth-badge-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background-color: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      margin-bottom: 1rem;
+    }
+
+    .auth-card h1 {
+      font-size: 1.65rem;
+      color: var(--primary-navy);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4rem;
+      line-height: 1.25;
+    }
+
+    .auth-card .auth-label-notice {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #b45309;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .auth-description {
+      font-size: 0.94rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    /* Demo Security & Storage Disclaimer */
+    .auth-disclaimer-box {
+      background-color: #eff6ff;
+      border-left: 4px solid var(--primary-blue);
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.5rem;
+      font-size: 0.88rem;
+      color: #1e3a8a;
+      line-height: 1.45;
+    }
+
+    .auth-disclaimer-box p + p {
+      margin-top: 0.5rem;
+    }
+
+    /* ==========================================================================
+       DASHBOARD HEADER & TOP BAR
+       ========================================================================== */
+    .dashboard-header {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 0.85rem;
+    }
+
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .brand-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    h1.app-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary-navy);
+      letter-spacing: -0.02em;
+    }
+
+    .staff-session-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .staff-pill {
+      background-color: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: var(--primary-navy);
+      padding: 0.4rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .staff-pill strong {
+      font-weight: 700;
+      color: var(--primary-blue);
+    }
+
+    .header-description {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Storage & Security Notice Banner */
+    .storage-banner {
+      background-color: #f8fafc;
+      border: 1px solid var(--border);
+      color: #334155;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.86rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      line-height: 1.45;
+    }
+
+    .storage-banner .icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ==========================================================================
+       DASHBOARD GRID & PANELS
+       ========================================================================== */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 390px 1fr;
+        align-items: start;
+      }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--transition-normal);
+    }
+
+    .panel-header {
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-header h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--primary-navy);
+      letter-spacing: -0.01em;
+    }
+
+    /* ==========================================================================
+       FORM CONTROLS & TOUCH TARGETS
+       ========================================================================== */
+    .form-group {
+      margin-bottom: 1.15rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+    }
+
+    .required-star {
+      color: var(--danger);
+      margin-left: 2px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      min-height: 44px; /* Large touch target for phones */
+      padding: 0.65rem 0.85rem;
+      font-size: 0.95rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background-color: #ffffff;
+      color: var(--text-main);
+      font-family: inherit;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+    }
+
+    textarea {
+      min-height: 85px;
+      resize: vertical;
+      padding-top: 0.75rem;
+    }
+
+    /* Radio Pills for Status (Lost / Found) */
+    .status-options {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .radio-pill {
+      flex: 1;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.92rem;
+      font-weight: 500;
+      user-select: none;
+      transition: all var(--transition-fast);
+      background-color: var(--surface);
+    }
+
+    .radio-pill:hover {
+      background-color: var(--surface-subtle);
+      border-color: #94a3b8;
+    }
+
+    .radio-pill input[type="radio"] {
+      margin: 0;
+      accent-color: var(--primary-navy);
+      width: 17px;
+      height: 17px;
+    }
+
+    .radio-pill:has(input:checked) {
+      border-color: var(--primary-blue);
+      background-color: #eff6ff;
+      font-weight: 600;
+      color: var(--primary-navy);
+      box-shadow: 0 1px 3px rgba(29, 78, 216, 0.12);
+    }
+
+    /* Friendly Error Messages */
+    .field-error {
+      display: none;
+      color: var(--danger);
+      font-size: 0.83rem;
+      margin-top: 0.35rem;
+      font-weight: 500;
+    }
+
+    .has-error input,
+    .has-error select,
+    .has-error textarea,
+    .has-error .status-options {
+      border-color: var(--danger) !important;
+      background-color: var(--danger-bg);
+    }
+
+    .has-error .field-error {
+      display: block;
+    }
+
+    /* ==========================================================================
+       BUTTONS & MICRO-INTERACTIONS
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 44px; /* Accessible touch target */
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 0.65rem 1.15rem;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background-color var(--transition-fast), 
+                  transform var(--transition-fast), 
+                  box-shadow var(--transition-fast),
+                  border-color var(--transition-fast),
+                  color var(--transition-fast);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background-color: var(--primary-navy);
+      color: #ffffff;
+      box-shadow: 0 2px 4px rgba(15, 43, 92, 0.2);
+    }
+
+    .btn-primary:hover {
+      background-color: #173873;
+      box-shadow: 0 4px 6px rgba(15, 43, 92, 0.25);
+    }
+
+    .btn-secondary {
+      background-color: #ffffff;
+      color: var(--text-main);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--surface-subtle);
+      border-color: #94a3b8;
+    }
+
+    .btn-action-return {
+      min-height: 38px;
+      background-color: #047857;
+      color: #ffffff;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-action-return:hover {
+      background-color: #065f46;
+    }
+
+    .btn-action-delete {
+      min-height: 38px;
+      background-color: transparent;
+      color: #64748b;
+      border: 1px solid transparent;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-action-delete:hover {
+      color: var(--danger);
+      background-color: var(--danger-bg);
+      border-color: var(--danger-border);
+    }
+
+    /* ==========================================================================
+       SEARCH BOX
+       ========================================================================== */
+    .search-wrapper {
+      position: relative;
+      margin-bottom: 1.15rem;
+    }
+
+    .search-input {
+      padding-left: 2.45rem !important;
+      padding-right: 2.2rem !important;
+      font-size: 0.95rem;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      font-size: 1rem;
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      line-height: 1;
+      padding: 0;
+      transition: background-color var(--transition-fast);
+    }
+
+    .search-clear:hover {
+      background-color: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    .records-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.85rem;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ==========================================================================
+       RECORD CARDS & ANIMATIONS
+       ========================================================================== */
+    .records-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @keyframes cardEnter {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .record-card {
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+      animation: cardEnter 200ms ease forwards;
+      transition: border-color var(--transition-fast), 
+                  box-shadow var(--transition-fast), 
+                  background-color var(--transition-fast);
+    }
+
+    .record-card:hover {
+      border-color: #94a3b8;
+      box-shadow: var(--shadow-md);
+    }
+
+    .record-card.is-returned {
+      background-color: #f8fafc;
+      border-color: var(--border-light);
+    }
+
+    .record-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .record-title-area {
+      flex: 1;
+    }
+
+    .record-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.35;
+      transition: color var(--transition-fast);
+    }
+
+    .record-card.is-returned .record-name {
+      text-decoration: line-through;
+      color: #64748b;
+    }
+
+    .badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.22rem 0.6rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border: 1px solid transparent;
+      transition: background-color var(--transition-normal), 
+                  color var(--transition-normal), 
+                  border-color var(--transition-normal),
+                  transform var(--transition-fast);
+    }
+
+    .badge-lost {
+      background-color: var(--lost-bg);
+      color: var(--lost-text);
+      border-color: var(--lost-border);
+    }
+
+    .badge-found {
+      background-color: var(--found-bg);
+      color: var(--found-text);
+      border-color: var(--found-border);
+    }
+
+    .badge-returned {
+      background-color: var(--returned-bg);
+      color: var(--returned-text);
+      border-color: var(--returned-border);
+    }
+
+    .badge-category {
+      background-color: var(--surface-subtle);
+      color: #334155;
+      border-color: var(--border-light);
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    .badge-demo {
+      background-color: var(--demo-bg);
+      color: var(--demo-text);
+      border-color: var(--demo-border);
+    }
+
+    .record-details {
+      margin-top: 0.7rem;
+      font-size: 0.88rem;
+      color: #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .detail-item {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      color: var(--text-muted);
+      min-width: 72px;
+      font-size: 0.82rem;
+    }
+
+    .record-desc {
+      margin-top: 0.6rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed var(--border-light);
+      font-size: 0.88rem;
+      color: #475569;
+      font-style: italic;
+      line-height: 1.45;
+    }
+
+    .record-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.9rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-light);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 2.75rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 2.4rem;
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+
+    /* ==========================================================================
+       TOAST NOTIFICATION
+       ========================================================================== */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background-color: var(--primary-navy);
+      color: #ffffff;
+      padding: 0.85rem 1.35rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.92rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity var(--transition-fast), transform var(--transition-fast);
+      pointer-events: none;
+      z-index: 1000;
+      max-width: 90vw;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ==========================================================================
+       REDUCED MOTION PREFERENCE
+       ========================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .record-card {
+        animation: none !important;
+      }
+      .screen-view {
+        transition: none !important;
+      }
+    }
+
+    /* ==========================================================================
+       MOBILE RESPONSIVENESS
+       ========================================================================== */
+    @media (max-width: 650px) {
+      body {
+        padding: 0.75rem;
+      }
+      h1.app-title {
+        font-size: 1.35rem;
+      }
+      .dashboard-header {
+        padding: 1rem;
+      }
+      .panel {
+        padding: 1.15rem;
+      }
+      .top-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .staff-session-bar {
+        justify-content: space-between;
+      }
+      .record-card-top {
+        flex-direction: column;
+      }
+      .record-actions {
+        justify-content: space-between;
+      }
+      .toast {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- ========================================================================
+         VIEW 1: DEMO SIGN-IN SCREEN
+         ======================================================================== -->
+    <section id="demoAuthScreen" class="screen-view active" aria-labelledby="auth-title">
+      <div class="auth-wrapper">
+        <div class="auth-card">
+          <div class="auth-badge-demo">
+            <span>🛡️</span> Demo Mode
+          </div>
+
+          <h1 id="auth-title">Campus Lost &amp; Found Staff Tracker</h1>
+          <span class="auth-label-notice">Demo sign-in — no real account or security.</span>
+
+          <p class="auth-description">
+            Please enter your display name to preview the staff intake and tracking dashboard.
+          </p>
+
+          <!-- Explicit Storage and Security Disclaimer -->
+          <div class="auth-disclaimer-box">
+            <p><strong>Important Privacy Notice:</strong></p>
+            <p>• Item records are saved only in this browser and are not shared with other users or devices.</p>
+            <p>• The demo sign-in does not protect stored records.</p>
+          </div>
+
+          <form id="demoAuthForm" novalidate>
+            <div class="form-group" id="group-displayName">
+              <label for="displayNameInput">Staff Display Name<span class="required-star">*</span></label>
+              <input 
+                type="text" 
+                id="displayNameInput" 
+                placeholder="e.g. Jordan (Student Desk), Officer Smith"
+                autocomplete="off"
+                maxlength="50"
+              >
+              <div class="field-error" id="error-displayName">Please enter a display name to enter the demo.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" id="enterDemoBtn">
+              <span>Enter Demo</span> ➔
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         VIEW 2: STAFF TRACKER DASHBOARD
+         ======================================================================== -->
+    <main id="dashboardScreen" class="screen-view" aria-label="Staff Tracker Dashboard">
+      
+      <!-- Top Campus Header -->
+      <header class="dashboard-header">
+        <div class="top-bar">
+          <div class="app-brand">
+            <span class="brand-icon">🏛️</span>
+            <h1 class="app-title">Campus Lost &amp; Found Staff Tracker</h1>
+          </div>
+
+          <!-- Staff Greeting and Exit Demo Action -->
+          <div class="staff-session-bar">
+            <span class="staff-pill">
+              <span>👤</span> Welcome, <strong id="currentUserGreeting">Staff</strong>
+            </span>
+            <button type="button" class="btn btn-secondary" id="exitDemoBtn" title="Exit demo session">
+              Exit Demo
+            </button>
+          </div>
+        </div>
+
+        <p class="header-description">
+          A quick-entry dashboard for campus staff to record, search, and track lost and found items across university facilities.
+        </p>
+
+        <!-- Explicit Storage and Security Banner -->
+        <div class="storage-banner">
+          <span class="icon">ℹ️</span>
+          <div>
+            <strong>Browser Storage Notice:</strong> Item records are saved only in this browser and are not shared with other users or devices. The demo sign-in does not protect stored records.
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard Layout: 2 Columns on Laptop, 1 Column on Phone -->
+      <div class="dashboard-grid">
+        
+        <!-- Left Column: Item Intake Form -->
+        <section class="panel" aria-labelledby="form-heading">
+          <div class="panel-header">
+            <h2 id="form-heading">Record New Item</h2>
+          </div>
+
+          <form id="itemForm" novalidate>
+            
+            <!-- Item Name -->
+            <div class="form-group" id="group-name">
+              <label for="itemName">Item Name<span class="required-star">*</span></label>
+              <input type="text" id="itemName" placeholder="e.g. Navy Blue Hydro Flask, Student ID" autocomplete="off">
+              <div class="field-error" id="error-name">Please provide a clear name for the item.</div>
+            </div>
+
+            <!-- Status: Lost or Found -->
+            <div class="form-group" id="group-status">
+              <label>Status<span class="required-star">*</span></label>
+              <div class="status-options" role="radiogroup" aria-label="Item Status">
+                <label class="radio-pill">
+                  <input type="radio" name="itemStatus" value="Found" checked>
+                  <span>🟢 Found</span>
+                </label>
+                <label class="radio-pill">
+                  <input type="radio" name="itemStatus" value="Lost">
+                  <span>🟡 Lost</span>
+                </label>
+              </div>
+              <div class="field-error" id="error-status">Please select whether the item is Lost or Found.</div>
+            </div>
+
+            <!-- Category -->
+            <div class="form-group" id="group-category">
+              <label for="itemCategory">Category<span class="required-star">*</span></label>
+              <select id="itemCategory">
+                <option value="">-- Select a Category --</option>
+                <option value="Electronics">Electronics (Phones, Laptops, Chargers)</option>
+                <option value="Keys & Cards">Keys &amp; Student Cards</option>
+                <option value="Bags & Backpacks">Bags &amp; Backpacks</option>
+                <option value="Clothing & Accessories">Clothing &amp; Accessories</option>
+                <option value="Books & Supplies">Books &amp; Study Supplies</option>
+                <option value="Personal Belongings">Personal Belongings (Bottles, Glasses)</option>
+                <option value="Other">Other Miscellaneous</option>
+              </select>
+              <div class="field-error" id="error-category">Please choose an item category.</div>
+            </div>
+
+            <!-- Location -->
+            <div class="form-group" id="group-location">
+              <label for="itemLocation">Campus Location<span class="required-star">*</span></label>
+              <input type="text" id="itemLocation" placeholder="e.g. Science Hall 301, Main Library 2nd Floor">
+              <div class="field-error" id="error-location">Please specify where the item was lost or found.</div>
+            </div>
+
+            <!-- Date -->
+            <div class="form-group" id="group-date">
+              <label for="itemDate">Date<span class="required-star">*</span></label>
+              <input type="date" id="itemDate">
+              <div class="field-error" id="error-date">Please pick a valid date.</div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group" id="group-description">
+              <label for="itemDescription">Description / Distinguishing Features</label>
+              <textarea id="itemDescription" placeholder="Color, brand, stickers, scratches, or other identifiable details..."></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary" style="width: 100%;" id="submitBtn">
+              <span>➕ Save Record</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- Right Column: Live Search & Item Log -->
+        <section class="panel" aria-labelledby="records-heading">
+          <div class="panel-header">
+            <h2 id="records-heading">Campus Item Log</h2>
+          </div>
+
+          <!-- Search Input -->
+          <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="searchInput" 
+              class="search-input" 
+              placeholder="Search records by name, location, category, or description..."
+              aria-label="Search records"
+            >
+            <button type="button" id="searchClearBtn" class="search-clear" title="Clear search">✕</button>
+          </div>
+
+          <!-- Meta Count Info -->
+          <div class="records-meta">
+            <span id="recordCountText">Showing records...</span>
+          </div>
+
+          <!-- Dynamic List of Cards -->
+          <div id="recordsContainer" class="records-list" role="region" aria-live="polite">
+            <!-- Rendered by JavaScript -->
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Smooth Toast Notification -->
+  <div id="toastNotification" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ==========================================================================
+    // STORAGE KEYS & CONSTANTS
+    // ==========================================================================
+    const STORAGE_KEY_RECORDS = 'campus_lost_found_staff_records_v1';
+    const STORAGE_KEY_INIT = 'campus_lost_found_initialized_v1';
+    const STORAGE_KEY_USER = 'campus_lost_found_demo_user_v1';
+
+    // DOM Elements - Screens & Navigation
+    const demoAuthScreen = document.getElementById('demoAuthScreen');
+    const dashboardScreen = document.getElementById('dashboardScreen');
+    const demoAuthForm = document.getElementById('demoAuthForm');
+    const displayNameInput = document.getElementById('displayNameInput');
+    const currentUserGreeting = document.getElementById('currentUserGreeting');
+    const exitDemoBtn = document.getElementById('exitDemoBtn');
+    const toastNotification = document.getElementById('toastNotification');
+
+    // DOM Elements - Item Intake Form
+    const itemForm = document.getElementById('itemForm');
+    const itemNameInput = document.getElementById('itemName');
+    const itemCategoryInput = document.getElementById('itemCategory');
+    const itemLocationInput = document.getElementById('itemLocation');
+    const itemDateInput = document.getElementById('itemDate');
+    const itemDescriptionInput = document.getElementById('itemDescription');
+
+    // DOM Elements - Search & Record List
+    const searchInput = document.getElementById('searchInput');
+    const searchClearBtn = document.getElementById('searchClearBtn');
+    const recordsContainer = document.getElementById('recordsContainer');
+    const recordCountText = document.getElementById('recordCountText');
+
+    // ==========================================================================
+    // SCREEN TRANSITIONS & DEMO SESSION MANAGEMENT
+    // ==========================================================================
+    function transitionToScreen(targetScreen) {
+      const activeScreen = document.querySelector('.screen-view.active');
+      if (activeScreen === targetScreen) return;
+
+      if (activeScreen) {
+        activeScreen.style.opacity = '0';
+        activeScreen.style.transform = 'translateY(6px)';
+        setTimeout(() => {
+          activeScreen.classList.remove('active');
+          activeScreen.style.display = 'none';
+
+          targetScreen.style.display = 'block';
+          // Trigger reflow for smooth animation
+          void targetScreen.offsetWidth;
+          targetScreen.classList.add('active');
+          targetScreen.style.opacity = '1';
+          targetScreen.style.transform = 'translateY(0)';
+        }, 180);
+      } else {
+        targetScreen.style.display = 'block';
+        targetScreen.classList.add('active');
+        targetScreen.style.opacity = '1';
+        targetScreen.style.transform = 'translateY(0)';
+      }
+    }
+
+    // Enter Demo Form Submit
+    demoAuthForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const enteredName = displayNameInput.value.trim();
+      const group = document.getElementById('group-displayName');
+
+      if (!enteredName) {
+        group.classList.add('has-error');
+        displayNameInput.focus();
+        return;
+      }
+
+      group.classList.remove('has-error');
+      localStorage.setItem(STORAGE_KEY_USER, enteredName);
+      currentUserGreeting.textContent = enteredName;
+      transitionToScreen(dashboardScreen);
+      showToast(`Welcome to the demo, ${enteredName}!`);
+    });
+
+    displayNameInput.addEventListener('input', function () {
+      document.getElementById('group-displayName').classList.remove('has-error');
+    });
+
+    // Exit Demo Action
+    exitDemoBtn.addEventListener('click', function () {
+      localStorage.removeItem(STORAGE_KEY_USER);
+      displayNameInput.value = '';
+      transitionToScreen(demoAuthScreen);
+      showToast('Exited demo session.');
+      setTimeout(() => displayNameInput.focus(), 220);
+    });
+
+    // Check existing demo session on initial load
+    function initSession() {
+      const savedUser = localStorage.getItem(STORAGE_KEY_USER);
+      if (savedUser) {
+        currentUserGreeting.textContent = savedUser;
+        demoAuthScreen.classList.remove('active');
+        demoAuthScreen.style.display = 'none';
+        dashboardScreen.classList.add('active');
+        dashboardScreen.style.display = 'block';
+        dashboardScreen.style.opacity = '1';
+        dashboardScreen.style.transform = 'translateY(0)';
+      } else {
+        demoAuthScreen.classList.add('active');
+        demoAuthScreen.style.display = 'block';
+        demoAuthScreen.style.opacity = '1';
+        demoAuthScreen.style.transform = 'translateY(0)';
+        dashboardScreen.classList.remove('active');
+        dashboardScreen.style.display = 'none';
+      }
+    }
+
+    // ==========================================================================
+    // TOAST NOTIFICATION SYSTEM
+    // ==========================================================================
+    let toastTimeout;
+    function showToast(message) {
+      clearTimeout(toastTimeout);
+      toastNotification.textContent = message;
+      toastNotification.classList.add('show');
+      toastTimeout = setTimeout(() => {
+        toastNotification.classList.remove('show');
+      }, 2600);
+    }
+
+    // ==========================================================================
+    // DATA PERSISTENCE & SAMPLE DEMO RECORDS
+    // ==========================================================================
+    function setTodayDate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      itemDateInput.value = `${year}-${month}-${day}`;
+    }
+
+    // Loads records from localStorage, seeding demo items only on the very first run
+    function loadRecords() {
+      const hasBeenInitialized = localStorage.getItem(STORAGE_KEY_INIT);
+
+      if (!hasBeenInitialized) {
+        const demoRecords = [
+          {
+            id: 'demo-' + Date.now() + '-1',
+            name: 'Navy Blue Hydro Flask (32oz)',
+            status: 'Found',
+            category: 'Personal Belongings',
+            location: 'Student Union - 1st Floor Lounge',
+            date: '2026-10-06',
+            description: 'Features a university vinyl sticker and a small dent near the bottom base.',
+            isReturned: false,
+            isDemo: true
+          },
+          {
+            id: 'demo-' + Date.now() + '-2',
+            name: 'MacBook Air MagSafe Charger',
+            status: 'Found',
+            category: 'Electronics',
+            location: 'Main Library - Quiet Study Room 204',
+            date: '2026-10-07',
+            description: 'White Apple 67W power adapter with braided cable left near outlet desk 4.',
+            isReturned: false,
+            isDemo: true
+          },
+          {
+            id: 'demo-' + Date.now() + '-3',
+            name: 'Student ID Card (J. Martinez)',
+            status: 'Lost',
+            category: 'Keys & Cards',
+            location: 'Campus Dining Commons',
+            date: '2026-10-08',
+            description: 'Card attached to a blue university lanyard with one brass locker key.',
+            isReturned: false,
+            isDemo: true
+          }
+        ];
+
+        localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(demoRecords));
+        localStorage.setItem(STORAGE_KEY_INIT, 'true');
+        return demoRecords;
+      }
+
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_RECORDS);
+        return stored ? JSON.parse(stored) : [];
+      } catch (err) {
+        console.error('Error parsing stored records:', err);
+        return [];
+      }
+    }
+
+    function saveRecords(records) {
+      localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(records));
+    }
+
+    // ==========================================================================
+    // FORM VALIDATION & ITEM INTAKE
+    // ==========================================================================
+    function clearFormErrors() {
+      const groups = ['group-name', 'group-status', 'group-category', 'group-location', 'group-date'];
+      groups.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('has-error');
+      });
+    }
+
+    function setFieldError(groupId, isError) {
+      const el = document.getElementById(groupId);
+      if (el) {
+        if (isError) {
+          el.classList.add('has-error');
+        } else {
+          el.classList.remove('has-error');
+        }
+      }
+    }
+
+    itemNameInput.addEventListener('input', () => setFieldError('group-name', false));
+    itemCategoryInput.addEventListener('change', () => setFieldError('group-category', false));
+    itemLocationInput.addEventListener('input', () => setFieldError('group-location', false));
+    itemDateInput.addEventListener('input', () => setFieldError('group-date', false));
+
+    itemForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      clearFormErrors();
+
+      const nameVal = itemNameInput.value.trim();
+      const statusRadio = document.querySelector('input[name="itemStatus"]:checked');
+      const statusVal = statusRadio ? statusRadio.value : '';
+      const categoryVal = itemCategoryInput.value.trim();
+      const locationVal = itemLocationInput.value.trim();
+      const dateVal = itemDateInput.value.trim();
+      const descriptionVal = itemDescriptionInput.value.trim();
+
+      let hasError = false;
+      let firstInvalidElement = null;
+
+      if (!nameVal) {
+        setFieldError('group-name', true);
+        hasError = true;
+        firstInvalidElement = firstInvalidElement || itemNameInput;
+      }
+
+      if (!statusVal) {
+        setFieldError('group-status', true);
+        hasError = true;
+      }
+
+      if (!categoryVal) {
+        setFieldError('group-category', true);
+        hasError = true;
+        firstInvalidElement = firstInvalidElement || itemCategoryInput;
+      }
+
+      if (!locationVal) {
+        setFieldError('group-location', true);
+        hasError = true;
+        firstInvalidElement = firstInvalidElement || itemLocationInput;
+      }
+
+      if (!dateVal) {
+        setFieldError('group-date', true);
+        hasError = true;
+        firstInvalidElement = firstInvalidElement || itemDateInput;
+      }
+
+      if (hasError) {
+        if (firstInvalidElement) {
+          firstInvalidElement.focus();
+        }
+        return;
+      }
+
+      const newRecord = {
+        id: 'rec-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+        name: nameVal,
+        status: statusVal,
+        category: categoryVal,
+        location: locationVal,
+        date: dateVal,
+        description: descriptionVal,
+        isReturned: false,
+        isDemo: false
+      };
+
+      const currentRecords = loadRecords();
+      currentRecords.unshift(newRecord);
+      saveRecords(currentRecords);
+
+      // Reset form
+      itemNameInput.value = '';
+      itemCategoryInput.value = '';
+      itemLocationInput.value = '';
+      itemDescriptionInput.value = '';
+      setTodayDate();
+
+      renderRecords();
+      showToast('Record saved successfully!');
+      itemNameInput.focus();
+    });
+
+    // ==========================================================================
+    // RECORD ACTIONS: MARK RETURNED & DELETE
+    // ==========================================================================
+    function handleMarkReturned(recordId) {
+      const records = loadRecords();
+      const itemIndex = records.findIndex(r => r.id === recordId);
+      if (itemIndex > -1) {
+        records[itemIndex].isReturned = true;
+        saveRecords(records);
+        
+        // Target card DOM for smooth badge and status transition
+        const cardEl = document.getElementById(recordId);
+        if (cardEl) {
+          const badgeEl = cardEl.querySelector('.status-indicator-badge');
+          if (badgeEl) {
+            badgeEl.className = 'badge badge-returned status-indicator-badge';
+            badgeEl.textContent = 'Returned ✓';
+          }
+          cardEl.classList.add('is-returned');
+        }
+
+        renderRecords();
+        showToast(`"${records[itemIndex].name}" marked as returned.`);
+      }
+    }
+
+    function handleDeleteRecord(recordId) {
+      const records = loadRecords();
+      const item = records.find(r => r.id === recordId);
+      const itemName = item ? item.name : 'this item';
+      
+      const confirmed = window.confirm(`Are you sure you want to delete "${itemName}"? This cannot be undone.`);
+      if (confirmed) {
+        const updated = records.filter(r => r.id !== recordId);
+        saveRecords(updated);
+        renderRecords();
+        showToast('Record removed.');
+      }
+    }
+
+    // ==========================================================================
+    // RENDER LOG & LIVE SEARCH
+    // ==========================================================================
+    function renderRecords() {
+      const query = searchInput.value.trim().toLowerCase();
+      const allRecords = loadRecords();
+
+      const filteredRecords = allRecords.filter(item => {
+        if (!query) return true;
+        const haystack = [
+          item.name || '',
+          item.category || '',
+          item.location || '',
+          item.description || '',
+          item.status || ''
+        ].join(' ').toLowerCase();
+        return haystack.includes(query);
+      });
+
+      // Update count text
+      if (allRecords.length === 0) {
+        recordCountText.textContent = 'No records in system.';
+      } else if (query) {
+        recordCountText.textContent = `Showing ${filteredRecords.length} of ${allRecords.length} items for "${query}"`;
+      } else {
+        recordCountText.textContent = `Showing all ${allRecords.length} recorded items`;
+      }
+
+      // Empty State
+      if (filteredRecords.length === 0) {
+        if (query) {
+          recordsContainer.innerHTML = `
+            <div class="empty-state">
+              <span class="empty-icon">🔍</span>
+              <p><strong>No items match your search.</strong></p>
+              <p style="font-size: 0.88rem; margin-top: 0.35rem;">Try searching for a different keyword or campus location.</p>
+            </div>
+          `;
+        } else {
+          recordsContainer.innerHTML = `
+            <div class="empty-state">
+              <span class="empty-icon">📋</span>
+              <p><strong>No records currently logged.</strong></p>
+              <p style="font-size: 0.88rem; margin-top: 0.35rem;">Use the form to log a lost or found item.</p>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      // Render Cards
+      recordsContainer.innerHTML = filteredRecords.map(item => {
+        const isReturned = item.isReturned === true;
+        
+        let statusBadge = '';
+        if (isReturned) {
+          statusBadge = `<span class="badge badge-returned status-indicator-badge">Returned ✓</span>`;
+        } else if (item.status === 'Found') {
+          statusBadge = `<span class="badge badge-found status-indicator-badge">🟢 Found</span>`;
+        } else {
+          statusBadge = `<span class="badge badge-lost status-indicator-badge">🟡 Lost</span>`;
+        }
+
+        const demoBadge = item.isDemo ? `<span class="badge badge-demo">Demo Data</span>` : '';
+        const categoryBadge = `<span class="badge badge-category">${escapeHtml(item.category)}</span>`;
+
+        const descHtml = item.description 
+          ? `<div class="record-desc">"${escapeHtml(item.description)}"</div>` 
+          : '';
+
+        let actionButton = '';
+        if (!isReturned) {
+          actionButton = `
+            <button 
+              type="button" 
+              class="btn btn-action-return" 
+              onclick="handleMarkReturned('${item.id}')"
+              title="Mark item as returned to owner"
+            >
+              ✓ Mark as Returned
+            </button>
+          `;
+        } else {
+          actionButton = `<span style="font-size: 0.82rem; color: #64748b; font-weight: 600;">✓ Completed</span>`;
+        }
+
+        return `
+          <article class="record-card ${isReturned ? 'is-returned' : ''}" id="${item.id}">
+            <div class="record-card-top">
+              <div class="record-title-area">
+                <div class="record-name">${escapeHtml(item.name)}</div>
+                <div class="badges-row">
+                  ${statusBadge}
+                  ${categoryBadge}
+                  ${demoBadge}
+                </div>
+              </div>
+            </div>
+
+            <div class="record-details">
+              <div class="detail-item">
+                <span class="detail-label">Location:</span>
+                <span>${escapeHtml(item.location)}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Date:</span>
+                <span>${escapeHtml(item.date)}</span>
+              </div>
+            </div>
+
+            ${descHtml}
+
+            <div class="record-actions">
+              ${actionButton}
+              <button 
+                type="button" 
+                class="btn btn-action-delete" 
+                onclick="handleDeleteRecord('${item.id}')"
+                title="Delete this record"
+              >
+                🗑️ Delete
+              </button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    // HTML escape helper
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Search input listeners
+    searchInput.addEventListener('input', () => {
+      searchClearBtn.style.display = searchInput.value ? 'block' : 'none';
+      renderRecords();
+    });
+
+    searchClearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClearBtn.style.display = 'none';
+      searchInput.focus();
+      renderRecords();
+    });
+
+    // Window Init
+    window.addEventListener('DOMContentLoaded', () => {
+      initSession();
+      setTodayDate();
+      renderRecords();
+    });
+  </script>
+</body>
+</html>
